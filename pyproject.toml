@@ -1,0 +1,47 @@
+[project]
+name = "wechat-screenshot-generator"
+version = "0.1.0"
+description = "Batch-generate WeChat-style PNG screenshots from JSON conversations"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+dependencies = [
+    "pillow>=11.0.0",
+    "python-dotenv>=1.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+    "ruff==0.16.8",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["scripts"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 80
+src = ["scripts"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "D"]
+# Google permits a one-line docstring when the signature explains the arguments.
+ignore = ["D105", "D417"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.isort]
+force-single-line = true
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*.py" = ["D"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

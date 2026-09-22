@@ -1,0 +1,23 @@
+# Local credentials must not be committed.
+.env
+.env.*
+!.env.example
+
+# Python environments and generated caches.
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Local datasets and generated outputs are not distributed.
+/data/
+/output/
+/archive/
+/llamafactory_*/
+/work/
+
+# Local publishing notes, design reference, and macOS metadata.
+/docs/publishing.md
+/docs/群聊设计.pdf
+.DS_Store
