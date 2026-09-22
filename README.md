@@ -1,4 +1,6 @@
-<h1 align="center">Createdate</h1>
+<h1 align="center">
+  <img src="assets/logo.png" width="280" alt="Createdate">
+</h1>
 
 <p align="center">
   <strong>微信风格合成数据工具 · 对话、截图与日程标签，一套流程生成。</strong>
