@@ -1094,6 +1094,19 @@ def test_prompt_chain_passes_prior_outputs_to_later_links() -> None:
         private_beat_plan(),
         final_unit,
         final_unit,
+        {
+            "supported": True,
+            "issues": [],
+            "evidence": {
+                field: [
+                    {
+                        "message_index": 9,
+                        "quote": final_unit["messages"][8]["text"],
+                    }
+                ]
+                for field in ("task", "date", "time")
+            },
+        },
     ]
 
     class RecordingClient:
@@ -1111,7 +1124,7 @@ def test_prompt_chain_passes_prior_outputs_to_later_links() -> None:
         client, "学习教育类", 1
     )  # type: ignore[arg-type]
 
-    assert len(client.calls) == 4
+    assert len(client.calls) == 5
     assert "不要从预设主题列表中选择" in client.calls[0][1]
     assert "正式中文姓名" in client.calls[0][1]
     assert "不能只是聊家常" in client.calls[0][1]
@@ -1123,6 +1136,8 @@ def test_prompt_chain_passes_prior_outputs_to_later_links() -> None:
     assert "minor_turn" in client.calls[3][1]
     assert "成员姓名白名单" in client.calls[2][1]
     assert "自然但无歧义的钟点" in client.calls[2][1]
+    assert "蓝图关系标记" not in client.calls[4][1]
+    assert "identity" not in client.calls[4][1]
     assert result["conversation_id"].startswith("conv_private_")
 
 
@@ -1149,6 +1164,19 @@ def test_group_prompt_chain_uses_group_roles_and_prior_outputs() -> None:
         group_beat_plan(),
         final_unit,
         final_unit,
+        {
+            "supported": True,
+            "issues": [],
+            "evidence": {
+                field: [
+                    {
+                        "message_index": 7,
+                        "quote": final_unit["messages"][6]["text"],
+                    }
+                ]
+                for field in ("task", "date", "time")
+            },
+        },
     ]
 
     class RecordingClient:
@@ -1164,7 +1192,7 @@ def test_group_prompt_chain_uses_group_roles_and_prior_outputs() -> None:
     client = RecordingClient()
     result = generate_group_dataset.generate_group_one(client, "宿舍群", 1)  # type: ignore[arg-type]
 
-    assert len(client.calls) == 4
+    assert len(client.calls) == 5
     assert (
         "群聊关系 + 眼前事项 + 成员状态 + 明确约定 + 自然落点"
         in client.calls[0][1]
@@ -1180,4 +1208,5 @@ def test_group_prompt_chain_uses_group_roles_and_prior_outputs() -> None:
     assert "宿舍群蓝图标记" in client.calls[3][1]
     assert "成员姓名白名单" in client.calls[2][1]
     assert "自然但无歧义的钟点" in client.calls[2][1]
+    assert "宿舍群蓝图标记" not in client.calls[4][1]
     assert result["conversation_id"].startswith("conv_group_")

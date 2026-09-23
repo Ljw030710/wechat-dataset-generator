@@ -63,6 +63,7 @@ def generate_private_one(
 		“突然加班所以改期”等合成数据常见套路；除非 direction 明确要求，也不要默认把事情放在周末。
 
 要求：
+{dataset_generation.SCHEDULE_GROUNDING_RULES}
 1. 关系和交流动机可信，事件普通、低风险，不含真实隐私。场景应像从一段真实生活中截取，
    不要像为展示信息而编写的完整案例；双方已经知道的背景不要重新互相解释。
 2. 在 participants 中一次确定两位参与者；每项字段固定为 name, identity, speaking_style。
@@ -170,7 +171,7 @@ schedule 不得再次使用旧安排。
 	我给你打视频”，禁止“8月25日19:30陪你测试设备”这种标签式句子。整段最多明确说一次最终日期和钟点。
 participants 使用 2–3 个汉字的正式中文姓名；所有 speaker 和 schedule.owner 必须逐字复制该姓名，
 不能改用昵称、称谓、简称或代号。
-	媒介提示只能作为 text 的简短前缀。本条 schedule 必须恰好 1 项，逐字复制 confirmed_schedule 的
+	媒介提示只能作为 text 的简短前缀。本条 schedule 必须恰好 1 项，沿用 confirmed_schedule 的
 date, owner, task, time，不得输出 note，也不得改成空数组。
 	participants[0] 的绿色气泡必须亲自确认该任务，并清楚出现“M月D日”和自然但无歧义的钟点；可以拆成
 相邻两条绿色消息以保持自然，但不能依赖白色气泡单独提供日期、时间或事项。note 非空时必须在
@@ -205,8 +206,8 @@ date, owner, task, time，不得输出 note，也不得改成空数组。
 speaker 和 schedule.owner 与 participants 姓名逐字一致。严格修正人数、长度、字段和时间。
 不得增加、删除或合并消息，messages 必须保持恰好 {message_count} 条；日期必须是真实公历日期。
 	删除所有“[文字]”“[文本]”技术标记。
-		本条是明确约定抽取训练样本：schedule 必须恰好 1 项，并与 confirmed_schedule 的 date、owner、task、
-	time 完全一致；owner 必须是 participants[0]。逐条确认绿色气泡中能直接读到最终任务、M月D日和
+		本条是明确约定抽取训练样本：schedule 必须恰好 1 项，并与 confirmed_schedule 的 date、owner、time 一致；
+	task 仅保留最终正文能支持的核心活动与细节；owner 必须是 participants[0]。逐条确认绿色气泡中能直接读到最终任务、M月D日和
 	自然但无歧义的钟点，不能让白色气泡成为唯一信息来源，也不能使用“时间不变”“还是老地方”等模糊代称。
 	如果出现“M月D日HH:MM + 完整任务标题”的日历记录式台词，改成“8月25日晚上七点半我过去”
 	这类真实语序；schedule.time 仍保持 HH:MM。绿色方不得重复前文已经清楚的长任务名称，整段最终日期

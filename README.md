@@ -3,11 +3,19 @@
 </h1>
 
 <p align="center">
-  <strong>微信风格合成数据工具 · 对话、截图与日程标签，一套流程生成。</strong>
+  <strong>Createdate · 微信风格多模态合成数据生成器</strong>
 </p>
 
 <p align="center">
-  Synthetic Chinese chats, WeChat-style screenshots, and paired schedule labels for multimodal fine-tuning.
+  一条命令生成中文私聊或群聊、微信风格截图与配套日程标签，导出 LLaMA-Factory 多模态数据格式。
+</p>
+
+<p align="center">
+  无需 API Key 即可体验示例 · 支持 DeepSeek 与兼容接口 · MIT 开源
+</p>
+
+<p align="center">
+  <strong>简体中文</strong> · <a href="README.en.md">English</a>
 </p>
 
 <p align="center">
@@ -24,8 +32,8 @@
   <a href="#许可">MIT 许可</a>
 </p>
 
-Createdate 面向中文聊天截图的**日程抽取与多模态微调**。
-它通过模型生成私聊或群聊，校验约定，再将对话渲染为截图，导出配套的 LLaMA-Factory 训练数据。
+面向需要构建**中文聊天截图日程抽取数据**的开发者与研究者。
+仓库提供从对话生成到图文样本导出的完整流程，可用于准备多模态微调数据。
 仓库包含完整工具和两段虚构演示，不分发作者的工作数据或训练数据集。
 
 ## 效果展示
@@ -33,7 +41,7 @@ Createdate 面向中文聊天截图的**日程抽取与多模态微调**。
 <div align="center">
   <table align="center">
     <tr>
-      <th align="center">私聊 · 归还画册</th>
+      <th align="center">私聊 · 约定取画册</th>
       <th align="center">群聊 · 准备读书会海报</th>
     </tr>
     <tr>
@@ -59,51 +67,29 @@ Createdate 面向中文聊天截图的**日程抽取与多模态微调**。
 }
 ```
 
-## 功能亮点
-
-- **对话与标签配套**：约定的动作、日期与时间需在绿色气泡中明确出现，并与源数据的 `schedule` 对应。
-- **私聊与群聊生成**：独立的场景规划、成稿和审校流程；每段新生成对话包含 10–12 条短消息。
-- **本地批量渲染**：默认 `900 × 1949` 单屏 PNG，支持中文字体、宽度和自身身份设置。
-- **训练格式导出**：配对截图与标签，生成 ShareGPT 格式的训练/验证 JSON 和 `dataset_info.json`。
-- **无需密钥即可体验**：自带示例的截图渲染与 `schedule` 模式导出均在本地完成。
-- **模型服务可选**：默认 DeepSeek，也支持 CLIProxyAPI 和自定义兼容接口，可配置自己的密钥、接口地址与模型。
-
-**场景规划 → 对话 JSON 与日程 → 截图 PNG → LLaMA-Factory 训练格式**
-
-## 技术亮点
-
-- **Prompt Chaining**：将生成拆成场景蓝图、消息节拍、对话成稿、对照审校四个阶段，逐步传递人物与约定。
-- **约束与反馈修复**：结合 JSON 结构、人物身份、未来日程和绿色气泡信息检查，将校验错误反馈给模型修复。
-- **多样性控制**：结合近期话题、关键词领域分类和结尾去重，减少批量生成中的重复场景。
-- **图文数据配对**：从同一份会话 JSON 渲染截图、提取日程标签，导出 ShareGPT 多模态样本；支持逐条保存与断点续跑。
-
-流程图、实现细节与适用边界见 **[技术设计](docs/architecture.md)**。
-
 ## 快速开始
 
 需要 **Python 3.11+**、[uv](https://docs.astral.sh/uv/getting-started/installation/)
-和本地中文字体。下载或克隆仓库后，在项目根目录执行：
+和本地中文字体。首次使用可直接执行以下命令；已有本地项目时，从 `uv sync --locked` 开始：
 
 ```bash
+# 克隆项目并进入目录
+git clone https://github.com/Ljw030710/wechat-dataset-generator.git
+cd wechat-dataset-generator
+
 # 安装锁定版本的依赖
 uv sync --locked
 
-# 将自带私聊示例渲染为截图
-uv run python scripts/render_private_chat.py examples/private_demo.json -o output/demo/private
-
-# 将截图与日程标签导出为 LLaMA-Factory 格式
-uv run python scripts/export_llamafactory_dataset.py \
-  --source examples/private_demo.json \
-  --images output/demo/private \
-  --output output/demo/llamafactory \
-  --label-mode schedule
+# 一条命令完成示例读取、截图渲染与训练数据导出（无需 API Key）
+uv run python scripts/run_pipeline.py private \
+  --source examples/private_demo.json -o output/demo
 ```
 
 完成后可查看：
 
 | 路径 | 内容 |
 | --- | --- |
-| `output/demo/private/private_demo.png` | 私聊截图 |
+| `output/demo/images/private_demo.png` | 私聊截图 |
 | `output/demo/llamafactory/images/` | 导出数据包中的配套图片 |
 | `output/demo/llamafactory/*_train.json`、`*_eval.json` | 训练与验证样本 |
 | `output/demo/llamafactory/dataset_info.json` | LLaMA-Factory 字段映射与数据集注册信息 |
@@ -112,14 +98,15 @@ uv run python scripts/export_llamafactory_dataset.py \
 演示只有一条样本，按当前划分逻辑进入验证集，训练集为空；它用于检查流程，正式训练需要自行生成足够的数据。
 
 <details>
-<summary>体验群聊截图</summary>
+<summary>体验群聊完整流程</summary>
 
 ```bash
-uv run python scripts/render_group_chat.py examples/group_demo.json -o output/demo/group
+uv run python scripts/run_pipeline.py group \
+  --source examples/group_demo.json -o output/demo/group
 ```
 
-图片保存为 `output/demo/group/group_demo.png`。群聊数据导出使用
-`scripts/export_group_llamafactory_dataset.py`，参数可通过 `--help` 查看。
+图片保存为 `output/demo/group/images/group_demo.png`，配套数据保存在
+`output/demo/group/llamafactory/`。同样无需 API Key。
 
 </details>
 
@@ -129,13 +116,19 @@ uv run python scripts/render_group_chat.py examples/group_demo.json -o output/de
 通过 `--font` 指定已安装的中文 `.ttf` 或 `.ttc` 字体；将下方示例路径替换为实际路径：
 
 ```bash
-uv run python scripts/render_private_chat.py examples/private_demo.json \
-  --font /path/to/chinese-font.ttf -o output/demo/private
+uv run python scripts/run_pipeline.py private \
+  --source examples/private_demo.json --font /path/to/chinese-font.ttf -o output/demo
 ```
 
 字体不随项目分发，不同系统和字体的文字排版可能略有差异。
 
 </details>
+
+## 为什么使用 Createdate
+
+- **图文配套**：从同一份会话生成私聊或群聊截图与日程标签，默认输出 `900 × 1949` 单屏 PNG，配套 ShareGPT 样本和 `dataset_info.json`。
+- **完整流程**：一条命令完成生成、渲染与导出，也可分步运行；逐条保存会话，支持从已有数量继续生成。
+- **质量检查**：检查参与者、日期和时间，再隔离创作背景核验标签的聊天原话依据；失败后反馈修复，结果仍需人工抽检。
 
 ## 生成自己的数据
 
@@ -149,19 +142,15 @@ cp -n .env.example .env
 后续运行无需重复配置。填写方式见[密钥配置](docs/usage.md#api-key-配置)。
 
 ```bash
-# 先生成一条私聊，确认模型服务和输出效果
-uv run python scripts/generate_private_dataset.py \
-  -n 1 \
-  --direction "朋友之间的日常协作" \
-  -o data/private_generated.json
-
-# 渲染刚刚生成的对话
-uv run python scripts/render_private_chat.py data/private_generated.json -o output/generated/private
+# 一次完成生成 → 渲染 → 导出
+uv run python scripts/run_pipeline.py private \
+  -n 1 --direction "朋友之间的日常协作" -o output/generated/private
 ```
 
-将 `-n 1` 改为所需数量即可批量生成。随后使用上面的导出命令，
-将 `--source` 和 `--images` 分别换成新生成的 JSON 与截图目录。
-群聊对应 `generate_group_dataset.py` 和 `render_group_chat.py`。
+结果保存在指定目录中的 `conversations.json`、`images/` 和 `llamafactory/`。
+将 `private` 换成 `group` 可生成群聊；将 `-n 1` 改为目标总条数即可批量生成。
+同一目录重跑会复用已保存的会话，重新渲染和导出。各步骤也可以独立运行，
+参数与断点续跑说明见[完整流程入口](docs/usage.md#一条命令完成全流程)。
 
 | 操作 | 是否调用模型 |
 | --- | --- |
@@ -175,6 +164,19 @@ uv run python scripts/render_private_chat.py data/private_generated.json -o outp
 接口需兼容 Chat Completions 和 JSON 对象输出，配置示例见[自定义模型服务](docs/usage.md#自定义模型服务)。
 模型选择和命令参数见[使用指南](docs/usage.md)，提示链与质量控制原理见[技术设计](docs/architecture.md)。
 
+## 技术设计与文档
+
+生成采用 **Prompt Chaining**：场景蓝图 → 消息节拍 → 对话成稿 → 对照审校，
+再进行标签证据核验，并结合近期话题与结尾去重减少重复。详细机制与适用边界见[技术设计](docs/architecture.md)。
+
+| 入口 | 内容 |
+| --- | --- |
+| [使用指南](docs/usage.md) | 模型配置、完整 JSON 格式与命令 |
+| [技术设计](docs/architecture.md) | Prompt Chaining、约束校验、反馈修复与图文数据配对 |
+| [脚本](scripts/) | 对话生成、截图渲染、标注与数据导出 |
+| [示例](examples/) | 可直接运行的私聊与群聊 JSON |
+| [测试](tests/) | 本地自动化测试 |
+
 ## 数据与使用范围
 
 - **抽取目标**：默认以 `participants[0]` 为右侧绿色气泡发送者，新生成数据要求此人明确参与一项未来约定。“未来”相对于对话时间。
@@ -185,16 +187,6 @@ uv run python scripts/render_private_chat.py data/private_generated.json -o outp
 
 合成内容和标签仍需人工审核。用于训练或评估时，应补充负样本、多样化场景和独立测试集。
 模型训练需要在 LLaMA-Factory 中另行配置，本项目负责数据准备。
-
-## 文档与项目结构
-
-| 入口 | 内容 |
-| --- | --- |
-| [使用指南](docs/usage.md) | 模型配置、完整 JSON 格式与命令 |
-| [技术设计](docs/architecture.md) | Prompt Chaining、约束校验、反馈修复与图文数据配对 |
-| [脚本](scripts/) | 对话生成、截图渲染、标注与数据导出 |
-| [示例](examples/) | 可直接运行的私聊与群聊 JSON |
-| [测试](tests/) | 本地自动化测试 |
 
 ## 贡献
 

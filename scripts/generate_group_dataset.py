@@ -71,6 +71,7 @@ def generate_group_one(
 {GROUP_ROLE_GUIDANCE}
 
 要求：
+{dataset_generation.SCHEDULE_GROUNDING_RULES}
 1. 本条必须使用恰好 {participant_count} 名成员，participants 数组长度必须等于 {participant_count}；
    不要求所有人同样活跃，但至少 3 人实际发言。
 2. 在 participants 中一次确定全部成员；每项字段固定为 name, group_role, speaking_style,
@@ -188,7 +189,7 @@ message_form 为 plain_text 时只输出对话正文，严禁添加“[文字]�
 媒体 beat 才能保留对应提示。最后一条要自然落地，可以是动作、短回应或顺手提醒，不能再提问或提出新建议。
 participants 使用 2–3 个汉字的正式中文姓名；所有 speaker 和 schedule.owner 必须逐字复制该姓名，
 不能改用昵称、称谓、简称或代号。
-			schedule 必须恰好 1 项，逐字复制 confirmed_schedule 的 date, owner, task, time，不得输出 note，
+			schedule 必须恰好 1 项，沿用 confirmed_schedule 的 date, owner, task, time，不得输出 note，
 		也不得改成空数组。共同活动只标记一次，不要按参与者复制成多项。
 		participants[0] 的绿色气泡必须亲自承担或接受该任务，并清楚出现“M月D日”和自然但无歧义的钟点；
 		可以拆成相邻两条绿色消息以保持自然，但不能只靠其他成员补全。note 非空时必须在绿色气泡中说出。
@@ -229,7 +230,7 @@ conversation_id 暂用 conv_group_draft_{sequence:04d}。
 11. 逐条检查 text 不超过 24 个字符；超长时改写成意思完整的自然短句，禁止截断词语。
 	12. 对照 final_result、final_summary 和 schedule 检查日期、时间、地点与分工；冲突中的旧方案
 	不得出现在解决后的消息或最终确认中。
-			    schedule 必须恰好 1 项，并与 confirmed_schedule 的 date、owner、task、time 完全一致；
+			    schedule 必须恰好 1 项，并与 confirmed_schedule 的 date、owner、time 一致，task 仅保留最终正文支持的核心活动与细节；
 			    owner 必须是 participants[0]，禁止给每位成员各复制一项。
 13. 用真实公历核对“X月X日周几”和 schedule；无法确定时删除星期，只保留数字日期。
 	14. 若成员逐个汇报、逐个确认、频繁复述前文，或交换头像后语气没有区别，改成不对称的真实群聊；

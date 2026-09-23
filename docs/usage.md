@@ -2,10 +2,11 @@
 
 [返回项目首页](../README.md) · [技术设计](architecture.md)
 
-这套工具完成两件事：
+这套工具完成三件事：
 
 1. 使用私聊或群聊专用的 Prompt Chaining，通过 DeepSeek、CLIProxyAPI 或自定义兼容接口生成固定 JSON 格式的聊天数据集。
 2. 把 JSON 分别渲染成微信风格的私聊或群聊 PNG 截图。
+3. 将截图和日程标签配对，导出 LLaMA-Factory 使用的 ShareGPT 格式数据。
 
 生成器不从固定主题、人物、地点、物品或句式池中随机搭配。模型先开放构思场景，再使用“人物关系 + 聊天目的 + 具体事件 + 情绪变化 + 细节信息”等结构完成规划、成稿与审校。每段对话限制为 10–12 条短消息；截图采用 iPhone X 的 `1125:2436` 屏幕比例，默认固定为 `900×1949`，不会随对话变成长图或短图。
 
@@ -36,12 +37,13 @@ Createdate/
 
 | 用途 | 文件 |
 | --- | --- |
+| 完整流程 | `run_pipeline.py` |
 | 生成私聊、群聊 | `generate_private_dataset.py`、`generate_group_dataset.py` |
 | 渲染私聊、群聊 | `render_private_chat.py`、`render_group_chat.py` |
 | 导出训练数据 | `export_llamafactory_dataset.py`、`export_group_llamafactory_dataset.py` |
 | 合并与整理数据 | `merge_llamafactory_datasets.py`、`organize_all_datasets.py` |
 | 追加会话数据 | `append_conversations.py` |
-| 公共能力 | `dataset_generation.py`、`annotation_cache.py`、`chat_render_cli.py`、`wechat_screenshot.py` |
+| 公共能力 | `dataset_generation.py`、`schedule_evidence.py`、`annotation_cache.py`、`chat_render_cli.py`、`wechat_screenshot.py` |
 
 `.venv/` 是本地虚拟环境，`__pycache__/`、`.pytest_cache/`、`.ruff_cache/`
 是工具自动生成的缓存，已在 `.gitignore` 中忽略。
@@ -53,6 +55,51 @@ Createdate/
 ```bash
 uv sync
 ```
+
+## 一条命令完成全流程
+
+配置好下方的 `.env` 后，一次完成 **生成 → 渲染 → 导出**：
+
+```bash
+# DeepSeek 私聊，全流程生成 1 条用于查看效果
+uv run python scripts/run_pipeline.py private --provider deepseek -n 1 -o output/pipeline/private
+
+# 群聊，使用 .env 中配置的提供商
+uv run python scripts/run_pipeline.py group -n 10 -o output/pipeline/group
+
+# 使用已有示例，不调用模型，也不需要 API Key
+uv run python scripts/run_pipeline.py private --source examples/private_demo.json -o output/pipeline/demo
+```
+
+指定目录中会生成：
+
+```text
+output/pipeline/private/
+├── conversations.json       # 会话及原始日程；生成时逐条保存
+├── images/                  # 渲染的 PNG
+└── llamafactory/             # 可迁移的训练数据包
+    ├── images/
+    ├── *_train.json
+    ├── *_eval.json
+    ├── annotations_schedule.json
+    └── dataset_info.json
+```
+
+- `-o` 是结果目录，默认 `output/pipeline/private` 或 `output/pipeline/group`。
+- `-n` 是该目录的**目标总条数**，默认 5；已有 1 条时指定 `-n 10` 只补齐 9 条。
+- `--source` 接受已有会话 JSON 数组，跳过生成并保存一份会话快照；不能与 `-n` 或 `--direction` 同用。
+- `--provider`、`--model`、`--base-url` 与单步命令一致；`--direction` 指定生成方向。
+- `--font` 指定中文字体，`--width` 指定截图宽度；绿色气泡固定对应 `participants[0]`，与导出标签保持一致。
+- 默认 `--label-mode schedule` 从源日程本地提取标签；`teacher` 会额外使用所选模型标注。
+- 默认 `--eval-ratio 0.1`；只有 1 条样本时进入验证集，训练集为空。可用 `--eval-ratio 0` 全部放入训练集，正式训练仍需足够样本。
+
+新生成的私聊和群聊会额外进行一次标签证据核验，只依据聊天正文检查标签并引用原话。无须增加参数；顺利生成一条需五次模型请求，修复与重试会增加请求数。
+核验是模型辅助检查，仍需人工抽检；已有会话续跑、`--source` 和 `schedule` 导出不会自动追溯核验旧数据。
+
+程序先检查字体和素材，再执行生成。任何阶段失败都会停止后续步骤，已完成的文件保留。
+修正问题后使用相同目录和命令重跑，会复用已保存的会话，重新渲染并导出；更换创作方向或模型后希望重新生成时，请使用新的输出目录。
+结果目录应专用于一次数据批次，减少数量或移除会话时不会自动删除此前留下的图片。
+已有生成、渲染、导出命令仍可单独使用，详见后续章节。
 
 ## API Key 配置
 

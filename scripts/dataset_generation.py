@@ -29,6 +29,9 @@ from typing import Literal
 
 from dotenv import dotenv_values
 
+from schedule_evidence import SCHEDULE_GROUNDING_RULES
+from schedule_evidence import validate_schedule_evidence
+
 ENV_FILE = pathlib.Path(__file__).resolve().parent.parent / ".env"
 
 DEEPSEEK_API_URL = "https://api.deepseek.com/chat/completions"
@@ -679,7 +682,8 @@ messages 每项字段和顺序固定为 speaker, text, time；共 10–12 条；
 participants 为{count}，格式为“姓名（简短角色特点）”。姓名必须是正式中文姓名，只能由 2–3 个汉字组成；禁止昵称、称谓、英文名、拼音、数字或“用户A”之类代号。
 messages.speaker 必须逐字使用 participants 括号前的正式姓名，不能使用昵称或称谓。
 schedule 每项字段和顺序固定为 date, owner, task, time；只保留最终仍有效的安排，0–3项；owner 也必须逐字使用 participants 中的正式姓名。
-不得增加 chat_type、title、summary 等任何字段。{group_name_rule}"""
+不得增加 chat_type、title、summary 等任何字段。{group_name_rule}
+{SCHEDULE_GROUNDING_RULES}"""
 
 
 def validate_with_repair(
@@ -739,6 +743,8 @@ def validate_with_repair(
             if chat_type == "group" and group_plan is not None:
                 validate_group_training_schedule(validated)
                 validate_closed_group_ending(validated)
+            if group_plan is not None or private_plan is not None:
+                validate_schedule_evidence(client, validated)
             return validated
         except ValueError as error:
             last_error = error
@@ -747,7 +753,10 @@ def validate_with_repair(
             candidate = client.complete(
                 "你是 JSON 与自然口语修复器。只修复明确的校验错误，不改变人物、剧情和有效安排。",
                 f"""待修复会话：{compact_json(candidate)}
-本地校验错误：{error}
+校验错误：{error}
+
+若错误为标签缺少正文依据，优先从 task 删除正文未支持的附加细节，不得把隐含背景补写进台词来通过检查。
+不能删去核心活动来掩盖错误；若核心约定没有成立，应修复约定表达并重新核验，无法修复时本条会被拒绝。
 
 	请只修复导致错误的字段。若短消息过多形成电报体，把其中一部分补成 8–18 字、带具体上下文的
 	自然消息；若出现会议纪要式套话，改成符合人物关系的口语。保持消息数量、speaker 顺序和事实
