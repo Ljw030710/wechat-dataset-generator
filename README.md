@@ -207,17 +207,6 @@ uv run python scripts/render_private_chat.py data/private_generated.json -o outp
 uv run pytest -q
 ```
 
-<details>
-<summary>相关截图工具</summary>
-
-- [wechat-dialog-generator](https://github.com/gaopengbin/wechat-dialog-generator)：可视化编辑、多种消息类型与批量截图。
-- [cn-chat-style-gen](https://github.com/webkubor/cn-chat-style-gen)：对话、拉人、列表和朋友圈模式，语料管理与批量导出。
-- [wechatscreenshotgenerator](https://github.com/baifengbai/wechatscreenshotgenerator)：Python/Tkinter 桌面截图编辑器。
-
-本项目专注于日程抽取所需的对话、截图与结构化标签的配套生成。
-
-</details>
-
 ## 许可
 
 代码、文档及 `examples/` 中的虚构演示采用 [MIT 许可证](LICENSE)，使用与分发时请保留版权及许可声明。
