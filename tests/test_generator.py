@@ -834,7 +834,10 @@ def test_batch_generation_uses_open_request_and_avoids_recent_topics(
 
     def generator(_client: object, direction: str, sequence: int) -> dict:
         directions.append(direction)
-        return {"topic": f"开放主题{sequence}"}
+        return {
+            "conversation_id": f"conv_{sequence}",
+            "topic": f"开放主题{sequence}",
+        }
 
     rows = dataset_generation.generate_dataset(
         "private",
@@ -859,6 +862,7 @@ def test_group_batch_passes_recent_names_and_retries_exact_duplicate(
     def generator(_client: object, direction: str, sequence: int) -> dict:
         directions.append(direction)
         return {
+            "conversation_id": f"conv_{sequence}",
             "topic": f"群聊主题{sequence}",
             "group_name": next(generated_names),
         }
@@ -886,7 +890,7 @@ def test_batch_retries_near_duplicate_topic(tmp_path: pathlib.Path) -> None:
     def generator(_client: object, _direction: str, _sequence: int) -> dict:
         nonlocal calls
         calls += 1
-        return {"topic": next(topics)}
+        return {"conversation_id": f"conv_{_sequence}", "topic": next(topics)}
 
     rows = dataset_generation.generate_dataset(
         "private",
@@ -912,7 +916,7 @@ def test_batch_retries_same_life_domain_and_passes_reason_to_next_attempt(
 
     def generator(_client: object, direction: str, _sequence: int) -> dict:
         directions.append(direction)
-        return {"topic": next(topics)}
+        return {"conversation_id": f"conv_{_sequence}", "topic": next(topics)}
 
     rows = dataset_generation.generate_dataset(
         "private",
@@ -951,7 +955,7 @@ def test_batch_detects_repeated_domain_hidden_in_message_text(
     )
 
     def generator(_client: object, _direction: str, _sequence: int) -> dict:
-        return next(outputs)
+        return {"conversation_id": f"conv_{_sequence}", **next(outputs)}
 
     rows = dataset_generation.generate_dataset(
         "private",
@@ -1002,7 +1006,7 @@ def test_group_batch_does_not_force_empty_schedules(
 
     def generator(_client: object, direction: str, _sequence: int) -> dict:
         directions.append(direction)
-        return next(outputs)
+        return {"conversation_id": f"conv_{_sequence}", **next(outputs)}
 
     rows = dataset_generation.generate_dataset(
         "group",
@@ -1029,7 +1033,7 @@ def test_private_batch_does_not_force_empty_schedules(
 
     def generator(_client: object, direction: str, _sequence: int) -> dict:
         directions.append(direction)
-        return next(outputs)
+        return {"conversation_id": f"conv_{_sequence}", **next(outputs)}
 
     rows = dataset_generation.generate_dataset(
         "private",
@@ -1055,7 +1059,7 @@ def test_batch_retries_high_risk_topic(tmp_path: pathlib.Path) -> None:
     )
 
     def generator(_client: object, _direction: str, _sequence: int) -> dict:
-        return next(outputs)
+        return {"conversation_id": f"conv_{_sequence}", **next(outputs)}
 
     rows = dataset_generation.generate_dataset(
         "group",

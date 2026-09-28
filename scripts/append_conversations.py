@@ -12,6 +12,7 @@ from typing import Any
 from typing import Literal
 
 import dataset_generation
+from conversation_identity import validate_conversation_ids
 
 ChatType = Literal["private", "group"]
 
@@ -68,6 +69,7 @@ def append_batch(
     """
     existing = load_array(dataset)
     additions = load_array(batch)
+    validate_conversation_ids([*existing, *additions])
     ids = {row["conversation_id"] for row in existing}
     topics = {row["topic"] for row in existing}
     endings = {ending_key(row) for row in existing}

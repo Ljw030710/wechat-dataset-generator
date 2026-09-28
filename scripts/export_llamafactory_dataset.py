@@ -22,6 +22,8 @@ from typing import Any
 
 import annotation_cache
 import dataset_generation
+from conversation_identity import image_filename
+from conversation_identity import validate_conversation_ids
 
 LABEL_TEMPERATURE = 0.1
 
@@ -177,6 +179,7 @@ def load_private_conversations(path: pathlib.Path) -> list[dict[str, Any]]:
     value = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(value, list):
         raise ValueError("私聊源数据顶层必须是数组")
+    validate_conversation_ids(value)
     return [
         dataset_generation.validate_conversation(item, "private")
         for item in value
@@ -268,7 +271,7 @@ def export_dataset(
 
     for index, conversation in enumerate(conversations, 1):
         conversation_id = conversation["conversation_id"]
-        image_source = images / f"{conversation_id}.png"
+        image_source = images / image_filename(conversation_id)
         if not image_source.is_file():
             raise FileNotFoundError(f"缺少对应截图：{image_source}")
         if api is not None and teacher_cache is not None:
@@ -301,7 +304,7 @@ def export_dataset(
     records: list[tuple[str, dict[str, Any]]] = []
     for conversation in conversations:
         conversation_id = conversation["conversation_id"]
-        file_name = f"{conversation_id}.png"
+        file_name = image_filename(conversation_id)
         shutil.copy2(images / file_name, image_output / file_name)
         records.append(
             (

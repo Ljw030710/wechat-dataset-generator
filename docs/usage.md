@@ -43,7 +43,7 @@ Createdate/
 | 导出训练数据 | `export_llamafactory_dataset.py`、`export_group_llamafactory_dataset.py` |
 | 合并与整理数据 | `merge_llamafactory_datasets.py`、`organize_all_datasets.py` |
 | 追加会话数据 | `append_conversations.py` |
-| 公共能力 | `dataset_generation.py`、`schedule_evidence.py`、`annotation_cache.py`、`chat_render_cli.py`、`wechat_screenshot.py` |
+| 公共能力 | `dataset_generation.py`、`conversation_identity.py`、`schedule_evidence.py`、`annotation_cache.py`、`chat_render_cli.py`、`wechat_screenshot.py` |
 
 `.venv/` 是本地虚拟环境，`__pycache__/`、`.pytest_cache/`、`.ruff_cache/`
 是工具自动生成的缓存，已在 `.gitignore` 中忽略。
@@ -285,6 +285,8 @@ uv run python scripts/generate_private_dataset.py --provider cliproxy -n 10 -o d
 固定规则：
 
 - `conversation_id`、`messages`、`participants`、`schedule`、`topic` 不得缺少或增加。
+- `conversation_id` 必须由 1–120 个英文字母、数字、下划线或连字符组成，不能使用系统保留文件名（如 `CON`、`NUL`）。同一批次或续跑文件内必须唯一，且不得仅大小写不同。
+- 截图与导出共用 `<conversation_id>.png` 命名规则。重复 ID 或非法字符会明确报错，不再自动替换字符或增加数字后缀。旧数据若含冒号、空格、路径分隔符等，请先修改源 JSON 的 ID，再重新渲染并导出。
 - 群聊必须额外包含 `group_name`：2–12 个字符的正常群名，例如“周末搭子群”；它不能是事件摘要。`topic` 仍用于概括本次聊天内容。
 - `messages` 固定 10–12 条；每条最多 28 个汉字，建议保持在 8–22 字。
 - 消息字段固定为 `speaker`、`text`、`time`。

@@ -20,6 +20,9 @@ from PIL import ImageDraw
 from PIL import ImageFont
 from PIL import ImageOps
 
+from conversation_identity import image_filename
+from conversation_identity import validate_conversation_ids
+
 IOS_SCREEN_RATIO = 2436 / 1125
 
 FONT_CANDIDATES = (
@@ -196,9 +199,10 @@ def strip_description(value: str) -> str:
 
 def normalize_conversation(unit: dict[str, Any], index: int) -> dict[str, Any]:
     """Return a normalized copy with message strings and missing defaults."""
-    conversation_id = str(
-        unit.get("conversation_id") or f"conversation_{index + 1:04d}"
+    conversation_id = unit.get(
+        "conversation_id", f"conversation_{index + 1:04d}"
     )
+    image_filename(conversation_id)
     raw_messages = unit.get("messages")
     if not isinstance(raw_messages, list) or not raw_messages:
         raise ValueError(f"{conversation_id}: messages 必须是非空数组")
@@ -358,12 +362,6 @@ def other_title(conversation: dict[str, Any], self_name: str) -> str:
         return strip_description(others[0])
     group_name = str(conversation.get("group_name", "")).strip() or "好友小分队"
     return f"{group_name}（{len(participants)}）"
-
-
-def safe_filename(value: str) -> str:
-    """Sanitize and shorten a conversation ID for use as a filename."""
-    cleaned = re.sub(r"[^\w.-]+", "_", value, flags=re.UNICODE).strip("._")
-    return cleaned[:120] or "conversation"
 
 
 def parse_color(value: str) -> tuple[int, int, int]:
@@ -1139,20 +1137,6 @@ def render_conversation(
     image.save(output_path, format="PNG", optimize=True)
 
 
-def unique_output_path(
-    output_dir: pathlib.Path, conversation_id: str, used: set[pathlib.Path]
-) -> pathlib.Path:
-    """Reserve a path in used, suffixing duplicate names within the batch."""
-    base = safe_filename(conversation_id)
-    candidate = output_dir / f"{base}.png"
-    suffix = 2
-    while candidate in used:
-        candidate = output_dir / f"{base}_{suffix}.png"
-        suffix += 1
-    used.add(candidate)
-    return candidate
-
-
 def generate_batch(
     conversations: Iterable[dict[str, Any]],
     output_dir: pathlib.Path,
@@ -1166,17 +1150,20 @@ def generate_batch(
 ) -> list[pathlib.Path]:
     """Normalize and render conversations, returning their PNG paths.
 
-    Duplicate filenames within the batch receive numeric suffixes. Existing
-    files at the selected paths are overwritten; images already saved remain
-    on disk if a later conversation fails.
+    Validate all IDs before rendering. Duplicate or invalid IDs are rejected.
+    Existing files for the same IDs are overwritten; images already saved
+    remain on disk if a later rendering operation fails.
     """
+    normalized = [
+        normalize_conversation(unit, index)
+        for index, unit in enumerate(conversations)
+    ]
+    validate_conversation_ids(normalized)
     generated: list[pathlib.Path] = []
-    used: set[pathlib.Path] = set()
-    for index, unit in enumerate(conversations):
-        conversation = normalize_conversation(unit, index)
+    for conversation in normalized:
         self_name = choose_self(conversation, cli_self)
-        output_path = unique_output_path(
-            output_dir, conversation["conversation_id"], used
+        output_path = output_dir / image_filename(
+            conversation["conversation_id"]
         )
         render_conversation(
             conversation,

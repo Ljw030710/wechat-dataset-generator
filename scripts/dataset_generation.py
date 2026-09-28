@@ -29,6 +29,8 @@ from typing import Literal
 
 from dotenv import dotenv_values
 
+from conversation_identity import image_filename
+from conversation_identity import validate_conversation_ids
 from schedule_evidence import SCHEDULE_GROUNDING_RULES
 from schedule_evidence import validate_schedule_evidence
 
@@ -272,6 +274,7 @@ def validate_conversation(value: Any, chat_type: ChatType) -> dict[str, Any]:
         value["topic"]
     ):
         raise ValueError("conversation_id 和 topic 必须是非空字符串")
+    image_filename(value["conversation_id"])
     if chat_type == "group":
         group_name = value["group_name"]
         if (
@@ -1747,6 +1750,7 @@ def generate_dataset(
         loaded = json.loads(output.read_text(encoding="utf-8"))
         if not isinstance(loaded, list):
             raise ValueError(f"现有输出 {output} 顶层必须是 JSON 数组")
+        validate_conversation_ids(loaded)
         for item in loaded:
             validated = validate_conversation(item, chat_type)
             validate_calendar_mentions(validated)
@@ -1835,6 +1839,7 @@ def generate_dataset(
                 result = generator(
                     api, attempt_request, index + 1 + sequence_offset
                 )
+                validate_conversation_ids([*results, result])
                 topic = result.get("topic")
                 if not isinstance(topic, str) or not topic.strip():
                     raise ValueError("生成结果缺少 topic")

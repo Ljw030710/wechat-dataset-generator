@@ -156,6 +156,7 @@ The direction above means “everyday coordination between friends.” Outputs a
 Results are saved as `conversations.json`, `images/`, and `llamafactory/` inside the selected directory.
 Replace `private` with `group` for group chats. `-n` is the **target total**, including conversations already saved in that directory.
 Rerunning reuses saved conversations, renders screenshots again, and exports the dataset. Use a new output directory for a fresh batch.
+For imported data, conversation IDs must be unique (including case-insensitive comparisons) and contain 1–120 ASCII letters, digits, underscores, or hyphens; system-reserved filenames are rejected. Images use `<conversation_id>.png` throughout. Invalid or duplicate IDs fail explicitly instead of being renamed; fix legacy IDs in the source JSON and render again before exporting.
 
 | Operation | Model calls |
 | --- | --- |
